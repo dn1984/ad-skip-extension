@@ -1,0 +1,66 @@
+{
+  "manifest_version": 3,
+  "name": "Ad Skip — Rutube и Дзен",
+  "version": "1.1.0",
+  "description": "Убирает рекламу в видео Rutube и Дзена: вставки в плеере и наложенные баннеры поверх видео.",
+  "minimum_chrome_version": "111",
+  "permissions": ["storage", "activeTab"],
+  "background": {
+    "service_worker": "src/background.js"
+  },
+  "action": {
+    "default_title": "Ad Skip — Rutube и Дзен",
+    "default_popup": "src/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://rutube.ru/*", "https://*.rutube.ru/*"],
+      "js": ["src/page-hook.js"],
+      "run_at": "document_start",
+      "world": "MAIN",
+      "all_frames": true
+    },
+    {
+      "matches": ["https://rutube.ru/*", "https://*.rutube.ru/*"],
+      "js": ["src/bridge.js"],
+      "css": ["src/hide-ads.css"],
+      "run_at": "document_start",
+      "all_frames": true
+    },
+    {
+      "matches": ["https://dzen.ru/*", "https://*.dzen.ru/*"],
+      "js": ["src/dzen-hook.js"],
+      "run_at": "document_start",
+      "world": "MAIN",
+      "all_frames": true
+    },
+    {
+      "matches": ["https://dzen.ru/*", "https://*.dzen.ru/*"],
+      "js": ["src/bridge.js"],
+      "css": ["src/hide-ads.css"],
+      "run_at": "document_start",
+      "all_frames": true
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["src/page-hook.js", "src/dzen-hook.js"],
+      "matches": [
+        "https://rutube.ru/*",
+        "https://*.rutube.ru/*",
+        "https://dzen.ru/*",
+        "https://*.dzen.ru/*"
+      ]
+    }
+  ]
+}

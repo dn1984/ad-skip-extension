@@ -1,0 +1,86 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Синтаксис, манифест и приватность
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Синтаксис скриптов
+        run: |
+          set -e
+          for f in src/*.js; do
+            echo "node --check $f"
+            node --check "$f"
+          done
+
+      - name: Валидность манифеста
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const m = JSON.parse(fs.readFileSync('manifest.json', 'utf8'));
+          const problems = [];
+          if (m.manifest_version !== 3) problems.push('manifest_version должен быть 3');
+          if (!m.version) problems.push('нет version');
+          if (!Array.isArray(m.content_scripts) || m.content_scripts.length === 0) problems.push('нет content_scripts');
+          const allowed = new Set(['storage', 'activeTab']);
+          for (const p of m.permissions || []) {
+            if (!allowed.has(p)) problems.push(`лишнее разрешение: ${p}`);
+          }
+          if (m.host_permissions && m.host_permissions.length) {
+            problems.push('host_permissions не используются — расширение не должно просить доступ к сторонним доменам');
+          }
+          for (const cs of m.content_scripts) {
+            for (const file of [...(cs.js || []), ...(cs.css || [])]) {
+              if (!fs.existsSync(file)) problems.push(`файл из манифеста не найден: ${file}`);
+            }
+          }
+          for (const file of Object.values(m.icons || {})) {
+            if (!fs.existsSync(file)) problems.push(`иконка не найдена: ${file}`);
+          }
+          if (problems.length) {
+            console.error(problems.join('\n'));
+            process.exit(1);
+          }
+          console.log('manifest.json в порядке');
+          NODE
+
+      - name: Нет внешних запросов и трекеров
+        run: |
+          set -e
+          if grep -RInE "https?://[^\"' )]+" src/ --include='*.js' | grep -vE "rutube\.ru|dzen\.ru|zen\.yandex\.ru|yandex\.ru|w3\.org"; then
+            echo "Найден внешний адрес вне разрешённого списка"
+            exit 1
+          fi
+          if grep -RInE "google-analytics|googletagmanager|mc\.yandex|sentry|amplitude|mixpanel" src/; then
+            echo "Найдены трекеры"
+            exit 1
+          fi
+          echo "Внешних запросов и трекеров нет"
+
+      - name: Нет секретов и личных данных
+        run: |
+          set -e
+          PATTERNS='gho_[A-Za-z0-9]{20,}|ghp_[A-Za-z0-9]{20,}|github_pat_|AKIA[0-9A-Z]{16}|-----BEGIN [A-Z ]*PRIVATE KEY-----|[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}'
+          if grep -RInE "$PATTERNS" . --exclude-dir=.git --exclude=ci.yml; then
+            echo "Найдены потенциальные секреты или почта"
+            exit 1
+          fi
+          echo "Секретов не найдено"

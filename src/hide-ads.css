@@ -1,0 +1,47 @@
+/*
+ * Скрытие рекламных контейнеров Rutube и Дзена.
+ *
+ * Это только оформление: рекламные вставки в видео убирают page-hook.js
+ * (Rutube) и dzen-hook.js (Дзен).
+ */
+
+/* ---------------------------------------------------------------- Rutube -- */
+
+#raichu-banner,
+#raichu_yasdk_container,
+#native-advert_container,
+#communicationBanner,
+[data-testid="advert-banner"],
+[data-component="r-banner"],
+[id^="adfox_"],
+[id*="ADFOX_"],
+.r-ad-sdk-adfox-wrapper,
+.wdp-video-recommendations-adfox-module__banners-wrapper,
+.wdp-recommended-ad-card-module__ad-banner-container,
+.app-download-topbar-module__topbar {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    max-height: 0 !important;
+}
+
+/* ------------------------------------------------------------------ Дзен -- */
+
+/*
+ * Наложенный баннер в правом нижнем углу плеера.
+ * Дзен строит его из div.video-viewer--video-viewer-player-ad-banner__banner-*,
+ * внутри — div#teaser-banner-0[data-testid="video-player-teaser-ad-banner"].
+ * Правило скрывает баннер до первого кадра; dzen-hook.js дополнительно
+ * нажимает кнопку «Закрыть баннер», чтобы плеер сам убрал разметку.
+ */
+[class*="video-viewer-player-ad-banner"],
+[class*="video-player-ad-banner-layout"],
+[data-testid="video-player-teaser-ad-banner"],
+#teaser-banner-0,
+#video-player-teaser {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}

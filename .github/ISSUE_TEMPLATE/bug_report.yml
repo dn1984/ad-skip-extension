@@ -1,0 +1,89 @@
+name: Баг
+description: Реклама не убралась, видео сломалось или расширение ведёт себя странно
+title: "[Баг]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Спасибо за отчёт! Перед отправкой уберите из скриншотов и логов личные данные:
+        имена, почту, идентификаторы аккаунта и ссылки с токенами.
+
+  - type: dropdown
+    id: site
+    attributes:
+      label: Сайт
+      options:
+        - Rutube
+        - Дзен
+        - Оба
+    validations:
+      required: true
+
+  - type: input
+    id: video
+    attributes:
+      label: Ссылка на видео или тип страницы
+      description: Если ссылку дать нельзя — опишите тип (обычное видео, эфир, embed, лента).
+      placeholder: https://dzen.ru/video/watch/...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Что ожидалось
+      placeholder: Реклама в углу видео должна исчезнуть.
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Что произошло на самом деле
+      placeholder: Баннер остался на месте, в консоли ошибка...
+    validations:
+      required: true
+
+  - type: input
+    id: browser
+    attributes:
+      label: Браузер и версия
+      placeholder: Яндекс Браузер 26.10 / Chrome 157
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Версия расширения
+      description: Видна в панели расширения или в chrome://extensions
+      placeholder: 1.1.0
+    validations:
+      required: true
+
+  - type: textarea
+    id: stats
+    attributes:
+      label: Вывод stats() из консоли страницы
+      description: |
+        Rutube: `__RUTUBE_AD_SKIP__.stats()`
+        Дзен: `__AD_SKIP_DZEN__.stats()`
+      render: shell
+
+  - type: textarea
+    id: console
+    attributes:
+      label: Ошибки в консоли
+      description: Вкладка Console, только строки, относящиеся к расширению.
+      render: shell
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Проверено
+      options:
+        - label: Я перезагрузил расширение и обновил вкладку (F5)
+          required: true
+        - label: В отчёте нет личных данных, токенов и паролей
+          required: true

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Вопрос по приватности
+    url: https://github.com/dn1984/ad-skip-extension/blob/main/PRIVACY.md
+    about: Что расширение делает с данными — политика приватности
+  - name: Как собрать и проверить локально
+    url: https://github.com/dn1984/ad-skip-extension/blob/main/CONTRIBUTING.md
+    about: Инструкции для участников

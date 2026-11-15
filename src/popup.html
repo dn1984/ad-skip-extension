@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <title>Ad Skip — Rutube и Дзен</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+    <header class="head">
+        <div class="brand">
+            <span class="dot" aria-hidden="true"></span>
+            <h1>Ad Skip — Rutube и Дзен</h1>
+        </div>
+        <p class="sub" id="subtitle">Реклама в видео вырезается до запуска плеера</p>
+    </header>
+
+    <main>
+        <section class="stats" aria-live="polite">
+            <div class="stat">
+                <span class="value" id="blockedCount">—</span>
+                <span class="label">вставок убрано</span>
+            </div>
+            <div class="stat">
+                <span class="value" id="bannerCount">—</span>
+                <span class="label">баннеров скрыто</span>
+            </div>
+            <div class="stat">
+                <span class="value" id="fallbackCount">—</span>
+                <span class="label">ускорено</span>
+            </div>
+            <div class="stat">
+                <span class="value" id="skipCount">—</span>
+                <span class="label">пропущено кнопкой</span>
+            </div>
+        </section>
+
+        <p class="state" id="pageState">Проверяем вкладку…</p>
+
+        <section class="settings">
+            <label class="row">
+                <span class="text">
+                    <strong>Отключать рекламу</strong>
+                    <small>Убирать вставки из ответа плеера</small>
+                </span>
+                <input type="checkbox" id="toggleBlock" checked>
+            </label>
+
+            <label class="row">
+                <span class="text">
+                    <strong>Скрывать баннеры на видео</strong>
+                    <small>Плашка в углу плеера Дзена и наложенные блоки</small>
+                </span>
+                <input type="checkbox" id="toggleOverlay" checked>
+            </label>
+
+            <label class="row">
+                <span class="text">
+                    <strong>Ускорять рекламу</strong>
+                    <small>Запасной режим, если вставка всё же появилась</small>
+                </span>
+                <input type="checkbox" id="toggleFast" checked>
+            </label>
+
+            <label class="row">
+                <span class="text">
+                    <strong>Скорость рекламы</strong>
+                    <small>Применяется только к рекламному ролику</small>
+                </span>
+                <select id="rate">
+                    <option value="8">8×</option>
+                    <option value="16" selected>16×</option>
+                    <option value="32">32×</option>
+                </select>
+            </label>
+
+            <label class="row">
+                <span class="text">
+                    <strong>Резать рекламные запросы</strong>
+                    <small>Дзен: не отдавать рекламному SDK его конфиг. Может влиять на работу сайта</small>
+                </span>
+                <input type="checkbox" id="toggleRequests">
+            </label>
+        </section>
+
+        <button type="button" class="ghost" id="reload">Перезагрузить страницу</button>
+    </main>
+
+    <footer>
+        <span id="version">v1.1.0</span>
+        <span class="hint">Работает на rutube.ru и dzen.ru</span>
+    </footer>
+
+    <script src="popup.js"></script>
+</body>
+</html>

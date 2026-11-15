@@ -1,0 +1,52 @@
+name: Идея
+description: Новая площадка, тип рекламы или улучшение настроек
+title: "[Идея]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Опишите задачу, а не только готовое решение — так проще подобрать подход.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Какая проблема
+      description: Что мешает и в каком сценарии.
+      placeholder: На Дзене в ленте остаются рекламные карточки между видео.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Как это могло бы работать
+      placeholder: Скрывать карточки с пометкой «Реклама» в рекомендациях.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Где это нужно
+      options:
+        - Rutube
+        - Дзен
+        - Другой сайт (опишите ниже)
+        - Настройки расширения
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Альтернативы и ограничения
+      description: Что уже пробовали, почему текущие настройки не подходят.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Подтверждение
+      options:
+        - label: Это не обход платного доступа и не вмешательство в серверную логику сервисов
+          required: true
