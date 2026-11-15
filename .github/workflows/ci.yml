@@ -1,4 +1,4 @@
-﻿name: CI
+name: CI
 
 on:
   push:
@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   check:
-    name: РЎРёРЅС‚Р°РєСЃРёСЃ, РјР°РЅРёС„РµСЃС‚ Рё РїСЂРёРІР°С‚РЅРѕСЃС‚СЊ
+    name: Синтаксис, манифест и приватность
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -23,7 +23,7 @@ jobs:
         with:
           node-version: 22
 
-      - name: РЎРёРЅС‚Р°РєСЃРёСЃ СЃРєСЂРёРїС‚РѕРІ
+      - name: Синтаксис скриптов
         run: |
           set -e
           for f in src/*.js; do
@@ -31,56 +31,72 @@ jobs:
             node --check "$f"
           done
 
-      - name: Р’Р°Р»РёРґРЅРѕСЃС‚СЊ РјР°РЅРёС„РµСЃС‚Р°
+      - name: Валидность манифеста
         run: |
           node - <<'NODE'
           const fs = require('fs');
           const m = JSON.parse(fs.readFileSync('manifest.json', 'utf8'));
           const problems = [];
-          if (m.manifest_version !== 3) problems.push('manifest_version РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ 3');
-          if (!m.version) problems.push('РЅРµС‚ version');
-          if (!Array.isArray(m.content_scripts) || m.content_scripts.length === 0) problems.push('РЅРµС‚ content_scripts');
+          if (m.manifest_version !== 3) problems.push('manifest_version должен быть 3');
+          if (!m.version) problems.push('нет version');
+          if (!Array.isArray(m.content_scripts) || m.content_scripts.length === 0) problems.push('нет content_scripts');
           const allowed = new Set(['storage', 'activeTab']);
           for (const p of m.permissions || []) {
-            if (!allowed.has(p)) problems.push(`Р»РёС€РЅРµРµ СЂР°Р·СЂРµС€РµРЅРёРµ: ${p}`);
+            if (!allowed.has(p)) problems.push('лишнее разрешение: ' + p);
           }
           if (m.host_permissions && m.host_permissions.length) {
-            problems.push('host_permissions РЅРµ РёСЃРїРѕР»СЊР·СѓСЋС‚СЃСЏ вЂ” СЂР°СЃС€РёСЂРµРЅРёРµ РЅРµ РґРѕР»Р¶РЅРѕ РїСЂРѕСЃРёС‚СЊ РґРѕСЃС‚СѓРї Рє СЃС‚РѕСЂРѕРЅРЅРёРј РґРѕРјРµРЅР°Рј');
+            problems.push('host_permissions не используются: расширение не должно просить доступ к сторонним доменам');
           }
           for (const cs of m.content_scripts) {
             for (const file of [...(cs.js || []), ...(cs.css || [])]) {
-              if (!fs.existsSync(file)) problems.push(`С„Р°Р№Р» РёР· РјР°РЅРёС„РµСЃС‚Р° РЅРµ РЅР°Р№РґРµРЅ: ${file}`);
+              if (!fs.existsSync(file)) problems.push('файл из манифеста не найден: ' + file);
             }
           }
           for (const file of Object.values(m.icons || {})) {
-            if (!fs.existsSync(file)) problems.push(`РёРєРѕРЅРєР° РЅРµ РЅР°Р№РґРµРЅР°: ${file}`);
+            if (!fs.existsSync(file)) problems.push('иконка не найдена: ' + file);
           }
           if (problems.length) {
             console.error(problems.join('\n'));
             process.exit(1);
           }
-          console.log('manifest.json РІ РїРѕСЂСЏРґРєРµ');
+          console.log('manifest.json в порядке');
           NODE
 
-      - name: РќРµС‚ РІРЅРµС€РЅРёС… Р·Р°РїСЂРѕСЃРѕРІ Рё С‚СЂРµРєРµСЂРѕРІ
+      - name: Нет внешних запросов и трекеров
         run: |
           set -e
           if grep -RInE "https?://[^\"' )]+" src/ --include='*.js' | grep -vE "rutube\.ru|dzen\.ru|zen\.yandex\.ru|yandex\.ru|w3\.org"; then
-            echo "РќР°Р№РґРµРЅ РІРЅРµС€РЅРёР№ Р°РґСЂРµСЃ РІРЅРµ СЂР°Р·СЂРµС€С‘РЅРЅРѕРіРѕ СЃРїРёСЃРєР°"
+            echo "Найден внешний адрес вне разрешённого списка"
             exit 1
           fi
           if grep -RInE "google-analytics|googletagmanager|mc\.yandex|sentry|amplitude|mixpanel" src/; then
-            echo "РќР°Р№РґРµРЅС‹ С‚СЂРµРєРµСЂС‹"
+            echo "Найдены трекеры"
             exit 1
           fi
-          echo "Р’РЅРµС€РЅРёС… Р·Р°РїСЂРѕСЃРѕРІ Рё С‚СЂРµРєРµСЂРѕРІ РЅРµС‚"
+          echo "Внешних запросов и трекеров нет"
 
-      - name: РќРµС‚ СЃРµРєСЂРµС‚РѕРІ Рё Р»РёС‡РЅС‹С… РґР°РЅРЅС‹С…
+      - name: Нет секретов и личных данных
         run: |
           set -e
-          PATTERNS='gho_[A-Za-z0-9]{20,}|ghp_[A-Za-z0-9]{20,}|github_pat_|AKIA[0-9A-Z]{16}|-----BEGIN [A-Z ]*PRIVATE KEY-----|[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}'
+          # Шаблоны собраны по частям, чтобы этот файл не находил сам себя.
+          K1='gh'; K2='o_'; K3='p_'; K4='github_'; K5='pat_'
+          PATTERNS="${K1}${K2}[A-Za-z0-9]{20,}"
+          PATTERNS="${PATTERNS}|${K1}${K3}[A-Za-z0-9]{20,}"
+          PATTERNS="${PATTERNS}|${K4}${K5}"
+          PATTERNS="${PATTERNS}|AKIA[0-9A-Z]{16}"
+          PATTERNS="${PATTERNS}|-----BEGIN [A-Z ]*PRIVATE KEY-----"
+          PATTERNS="${PATTERNS}|[A-Za-z0-9._%+-]{1,64}@[A-Za-z0-9.-]{1,64}\.[A-Za-z]{2,}"
           if grep -RInE "$PATTERNS" . --exclude-dir=.git --exclude=ci.yml; then
-            echo "РќР°Р№РґРµРЅС‹ РїРѕС‚РµРЅС†РёР°Р»СЊРЅС‹Рµ СЃРµРєСЂРµС‚С‹ РёР»Рё РїРѕС‡С‚Р°"
+            echo "Найдены потенциальные секреты или почта"
             exit 1
           fi
-          echo "РЎРµРєСЂРµС‚РѕРІ РЅРµ РЅР°Р№РґРµРЅРѕ"
+          echo "Секретов и личных данных не найдено"
+
+      - name: Нет мусорных символов вместо кириллицы
+        run: |
+          set -e
+          if grep -RInE "Р[’‘“”ЎЁ]|РЎ|РЅ" . --exclude-dir=.git --exclude=ci.yml --include='*.md' --include='*.yml' --include='*.js'; then
+            echo "Найдена перекодированная кириллица"
+            exit 1
+          fi
+          echo "Кодировка текстов в порядке"
