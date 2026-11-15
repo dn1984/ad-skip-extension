@@ -1,4 +1,4 @@
-name: CI
+﻿name: CI
 
 on:
   push:
@@ -12,18 +12,18 @@ permissions:
 
 jobs:
   check:
-    name: Синтаксис, манифест и приватность
+    name: РЎРёРЅС‚Р°РєСЃРёСЃ, РјР°РЅРёС„РµСЃС‚ Рё РїСЂРёРІР°С‚РЅРѕСЃС‚СЊ
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 22
 
-      - name: Синтаксис скриптов
+      - name: РЎРёРЅС‚Р°РєСЃРёСЃ СЃРєСЂРёРїС‚РѕРІ
         run: |
           set -e
           for f in src/*.js; do
@@ -31,56 +31,56 @@ jobs:
             node --check "$f"
           done
 
-      - name: Валидность манифеста
+      - name: Р’Р°Р»РёРґРЅРѕСЃС‚СЊ РјР°РЅРёС„РµСЃС‚Р°
         run: |
           node - <<'NODE'
           const fs = require('fs');
           const m = JSON.parse(fs.readFileSync('manifest.json', 'utf8'));
           const problems = [];
-          if (m.manifest_version !== 3) problems.push('manifest_version должен быть 3');
-          if (!m.version) problems.push('нет version');
-          if (!Array.isArray(m.content_scripts) || m.content_scripts.length === 0) problems.push('нет content_scripts');
+          if (m.manifest_version !== 3) problems.push('manifest_version РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ 3');
+          if (!m.version) problems.push('РЅРµС‚ version');
+          if (!Array.isArray(m.content_scripts) || m.content_scripts.length === 0) problems.push('РЅРµС‚ content_scripts');
           const allowed = new Set(['storage', 'activeTab']);
           for (const p of m.permissions || []) {
-            if (!allowed.has(p)) problems.push(`лишнее разрешение: ${p}`);
+            if (!allowed.has(p)) problems.push(`Р»РёС€РЅРµРµ СЂР°Р·СЂРµС€РµРЅРёРµ: ${p}`);
           }
           if (m.host_permissions && m.host_permissions.length) {
-            problems.push('host_permissions не используются — расширение не должно просить доступ к сторонним доменам');
+            problems.push('host_permissions РЅРµ РёСЃРїРѕР»СЊР·СѓСЋС‚СЃСЏ вЂ” СЂР°СЃС€РёСЂРµРЅРёРµ РЅРµ РґРѕР»Р¶РЅРѕ РїСЂРѕСЃРёС‚СЊ РґРѕСЃС‚СѓРї Рє СЃС‚РѕСЂРѕРЅРЅРёРј РґРѕРјРµРЅР°Рј');
           }
           for (const cs of m.content_scripts) {
             for (const file of [...(cs.js || []), ...(cs.css || [])]) {
-              if (!fs.existsSync(file)) problems.push(`файл из манифеста не найден: ${file}`);
+              if (!fs.existsSync(file)) problems.push(`С„Р°Р№Р» РёР· РјР°РЅРёС„РµСЃС‚Р° РЅРµ РЅР°Р№РґРµРЅ: ${file}`);
             }
           }
           for (const file of Object.values(m.icons || {})) {
-            if (!fs.existsSync(file)) problems.push(`иконка не найдена: ${file}`);
+            if (!fs.existsSync(file)) problems.push(`РёРєРѕРЅРєР° РЅРµ РЅР°Р№РґРµРЅР°: ${file}`);
           }
           if (problems.length) {
             console.error(problems.join('\n'));
             process.exit(1);
           }
-          console.log('manifest.json в порядке');
+          console.log('manifest.json РІ РїРѕСЂСЏРґРєРµ');
           NODE
 
-      - name: Нет внешних запросов и трекеров
+      - name: РќРµС‚ РІРЅРµС€РЅРёС… Р·Р°РїСЂРѕСЃРѕРІ Рё С‚СЂРµРєРµСЂРѕРІ
         run: |
           set -e
           if grep -RInE "https?://[^\"' )]+" src/ --include='*.js' | grep -vE "rutube\.ru|dzen\.ru|zen\.yandex\.ru|yandex\.ru|w3\.org"; then
-            echo "Найден внешний адрес вне разрешённого списка"
+            echo "РќР°Р№РґРµРЅ РІРЅРµС€РЅРёР№ Р°РґСЂРµСЃ РІРЅРµ СЂР°Р·СЂРµС€С‘РЅРЅРѕРіРѕ СЃРїРёСЃРєР°"
             exit 1
           fi
           if grep -RInE "google-analytics|googletagmanager|mc\.yandex|sentry|amplitude|mixpanel" src/; then
-            echo "Найдены трекеры"
+            echo "РќР°Р№РґРµРЅС‹ С‚СЂРµРєРµСЂС‹"
             exit 1
           fi
-          echo "Внешних запросов и трекеров нет"
+          echo "Р’РЅРµС€РЅРёС… Р·Р°РїСЂРѕСЃРѕРІ Рё С‚СЂРµРєРµСЂРѕРІ РЅРµС‚"
 
-      - name: Нет секретов и личных данных
+      - name: РќРµС‚ СЃРµРєСЂРµС‚РѕРІ Рё Р»РёС‡РЅС‹С… РґР°РЅРЅС‹С…
         run: |
           set -e
           PATTERNS='gho_[A-Za-z0-9]{20,}|ghp_[A-Za-z0-9]{20,}|github_pat_|AKIA[0-9A-Z]{16}|-----BEGIN [A-Z ]*PRIVATE KEY-----|[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}'
           if grep -RInE "$PATTERNS" . --exclude-dir=.git --exclude=ci.yml; then
-            echo "Найдены потенциальные секреты или почта"
+            echo "РќР°Р№РґРµРЅС‹ РїРѕС‚РµРЅС†РёР°Р»СЊРЅС‹Рµ СЃРµРєСЂРµС‚С‹ РёР»Рё РїРѕС‡С‚Р°"
             exit 1
           fi
-          echo "Секретов не найдено"
+          echo "РЎРµРєСЂРµС‚РѕРІ РЅРµ РЅР°Р№РґРµРЅРѕ"
