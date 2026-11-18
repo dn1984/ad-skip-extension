@@ -92,11 +92,49 @@ jobs:
           fi
           echo "Секретов и личных данных не найдено"
 
-      - name: Нет мусорных символов вместо кириллицы
+      - name: Тексты в правильной кодировке
         run: |
-          set -e
-          if grep -RInE "Р[’‘“”ЎЁ]|РЎ|РЅ" . --exclude-dir=.git --exclude=ci.yml --include='*.md' --include='*.yml' --include='*.js'; then
-            echo "Найдена перекодированная кириллица"
-            exit 1
-          fi
-          echo "Кодировка текстов в порядке"
+          node - <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+
+          // Признаки перекодировки UTF-8 -> cp1251: пары «кириллица + символ,
+          // которого в русском тексте быть не может». Пары собираются из кодов,
+          // чтобы этот файл не находил сам себя.
+          const PAIRS = [
+            [0x0420, 0x2019], [0x0420, 0x040e], [0x0420, 0x0405], [0x0420, 0x00b5],
+            [0x0420, 0x0401], [0x0420, 0x0451], [0x0421, 0x201a], [0x0421, 0x0452],
+            [0x0421, 0x20ac], [0x0421, 0x2021]
+          ];
+          const signatures = PAIRS.map((p) => String.fromCharCode(p[0]) + String.fromCharCode(p[1]));
+
+          const SELF = path.normalize(path.join('.github', 'workflows', 'ci.yml'));
+          const exts = new Set(['.md', '.yml', '.js', '.json', '.html', '.css']);
+          const problems = [];
+
+          function walk(dir) {
+            for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+              if (entry.name === '.git' || entry.name === 'node_modules') continue;
+              const full = path.join(dir, entry.name);
+              if (entry.isDirectory()) {
+                walk(full);
+                continue;
+              }
+              if (!exts.has(path.extname(entry.name))) continue;
+              if (path.normalize(full) === SELF) continue;
+
+              const text = fs.readFileSync(full, 'utf8');
+              if (text.includes('\uFFFD')) problems.push(full + ': символ U+FFFD');
+              for (const sig of signatures) {
+                if (text.includes(sig)) problems.push(full + ': перекодировка (U+' + sig.codePointAt(0).toString(16) + ' U+' + sig.codePointAt(1).toString(16) + ')');
+              }
+            }
+          }
+
+          walk('.');
+          if (problems.length) {
+            console.error(problems.join('\n'));
+            process.exit(1);
+          }
+          console.log('Кодировка текстов в порядке');
+          NODE
